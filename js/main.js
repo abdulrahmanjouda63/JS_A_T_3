@@ -1,240 +1,174 @@
-//Param
-var siteName = document.getElementById("bookmarkName");
-var siteURL = document.getElementById("bookmarkURL");
+// Select inputs from HTML
+var nameInput = document.getElementById("siteName");
+var urlInput = document.getElementById("siteURL");
+var addBtn = document.getElementById("addBtn");
+var deleteBtn = document.getElementById("deleteBtn");
+var allSitesBody = document.getElementById("allSitesBody");
+var formGroups = document.getElementsByClassName("form-group");
+var formControls = document.getElementsByClassName("form-control");
+var errorMsgModal = document.getElementById("errorMsgModal");
+var searchInput = document.getElementById("searchName");
 
-var tableContent = document.getElementById("tableContent");
-var requirementList = document.querySelectorAll(".requirement-list li");
-var requirementList2 = document.querySelectorAll(".requirements-list li");
+// Initialize global variables
+var sitesList;
+var updateIndex;
 
-var updateBtn = document.getElementById("updateBtn");
-var submitBtn = document.getElementById("submitBtn");
-
-var deleteBtns;
-var visitBtns;
-var siteNameWarn = document.getElementById("siteNameWarn");
-var siteURLWarn = document.getElementById("siteURLWarn");
-var bookmarks = [];
-//Regex
-var nameRegex = /^[A-Z]\w{2,}(\s+\w+)*$/;
-var urlRegex = /^(https?:\/\/)?(w{3}\.)?\w+\.\w{2,}\/?(:\d{2,5})?(\/\w+)*$/;
-
-const siteNameRequirements = [
-  { regex: /.{3,}/, index: 0 },
-  { regex: /^[A-Z][a-z]*$/, index: 1 },
-];
-
-const siteURLRequirements = [
-  { regex: /.{3,}/, index: 0 },
-  {
-    regex: /^(https?:\/\/)?(w{3}\.)?\w+\.\w{2,}\/?(:\d{2,5})?(\/\w+)*$/,
-    index: 1,
-  },
-];
-
-if (localStorage.getItem("bookMarker") != null) {
-  bookmarks = JSON.parse(localStorage.getItem("bookMarker"));
-  displaySites();
+// Fill sitesList from localStorage after loading the page
+if(localStorage.getItem("sitesList")) {
+    sitesList = JSON.parse(localStorage.getItem("sitesList"));
+    viewSites(sitesList);
+} else {
+    sitesList = [];
 }
 
-siteName.addEventListener("keyup", (e) => {
-  let isValid = true;
-  debugger;
-  siteNameRequirements.forEach((item) => {
-    const isRequirementMet = item.regex.test(e.target.value);
-    const requirementItem = requirementList[item.index];
-    debugger;
-    if (isRequirementMet) {
-      requirementItem.classList.add("valid");
-      requirementItem.firstElementChild.className = "fa-solid fa-check";
-    } else {
-      requirementItem.classList.remove("valid");
-      requirementItem.firstElementChild.className = "fa-solid fa-circle";
-      isValid = false;
-    }
-  });
-  debugger;
-  if (isValid) {
-    siteNameWarn.classList.add("d-none");
-    validate(siteName, nameRegex);
-  } else {
-    siteNameWarn.classList.remove("d-none");
-    validate(siteName, nameRegex);
-  }
-});
+// Add validation classes for css
+for(i = 0; i < formControls.length; i++) {
+    formControls[i].addEventListener("input", (event) => {
+        let sharedIndex = parseInt(event.target.dataset.id);
+        if(sharedIndex == 1 && isValidsiteURL(urlInput.value)) {
+            addValidationClass(formGroups[sharedIndex]);
+        }
+        addValidationClass(formGroups[sharedIndex]);
+    });
+}
 
-siteURL.addEventListener("keyup", (e) => {
-  let isValid = true;
-
-  siteURLRequirements.forEach((item) => {
-    debugger;
-    const isRequirementMet = item.regex.test(e.target.value);
-    const requirementItem = requirementList2[item.index];
-
-    if (isRequirementMet) {
-      requirementItem.classList.add("valid");
-      requirementItem.firstElementChild.className = "fa-solid fa-check";
-    } else {
-      requirementItem.classList.remove("valid");
-      requirementItem.firstElementChild.className = "fa-solid fa-circle";
-      isValid = false;
-    }
-  });
-
-  if (isValid) {
-    siteURLWarn.classList.add("d-none");
-    validate(siteURL, urlRegex);
-  } else {
-    siteURLWarn.classList.remove("d-none");
-    validate(siteURL, urlRegex);
-  }
-});
-
-//Add Site Function
 function addSite() {
-  if (
-    siteName.value == null ||
-    siteName.value == "" ||
-    siteURL.value == null ||
-    siteURL.value == ""
-  ) {
-    alert("Please make Sure you did fill up all fields ");
-    return;
-  }
-  debugger;
-
-  var siteObject = {
-    name: siteName.value,
-    url: siteURL.value,
-  };
-
-  bookmarks.push(siteObject);
-  localStorage.setItem("bookMarker", JSON.stringify(bookmarks));
-  clearInputs();
-  displaySites();
-}
-
-//Validate Function
-function validate(element, regex) {
-  debugger;
-  var testRegex = regex;
-  if (testRegex.test(element.value)) {
-    element.classList.add("is-valid");
-    element.classList.remove("is-invalid");
-  } else {
-    element.classList.add("is-invalid");
-    element.classList.remove("is-valid");
-  }
-}
-
-//Clear all inputs
-function clearInputs() {
-  siteName.value = "";
-  siteURL.value = "";
-  siteURL.classList.remove("is-valid");
-  siteName.classList.remove("is-valid");
-}
-
-//Display Sites as a table
-function displaySites() {
-  debugger;
-  let data = ``;
-  for (var i = 0; i < bookmarks.length; i++) {
-    data += `
-      <tr>
-      <td>${bookmarks[i].name}</td>
-      <td>${bookmarks[i].url}</td>
-      <td>
-        <button class="btn btn-visit" onclick="visitWebsite(${i})">
-        <i class="fa-solid fa-eye fa-beat-fade pe-2"></i>Visit
-      </button>
-      </td>
-      <td>
-      <button class="btn btn-delete pe-2" onclick="deleteItem(${i})">
-      <i class="fa-solid fa-trash-can fa-flip"></i>
-      Delete
-    </button>
-    <button class="btn btn-update pe-2" onclick="updateItem(${i})">
-    <i class="fa-solid fa-pen-to-square fa-bounce"></i>
-    Update
-  </button>
-      </td>
-      
-    </tr>
-      `;
-  }
-
-  tableContent.innerHTML = data;
-}
-
-function search(search) {
-  var query = ``;
-  for (let i = 0; i < bookmarks.length; i++) {
-    if (bookmarks[i].name.toLowerCase().includes(search.toLowerCase())) {
-      query += `
-      <tr>
-      <td>${bookmarks[i].name.replace(
-        new RegExp(search, "ig"),
-        "<span>" + search + "</span>"
-      )}</td>
-      <td>${bookmarks[i].url}</td>
-      <td>
-        <button class="btn btn-visit" onclick="visitWebsite(${i})">
-        <i class="fa-solid fa-eye fa-beat-fade pe-2"></i>Visit
-      </button>
-      </td>
-      <td>
-      <button class="btn btn-delete pe-2" onclick="deleteItem(${i})">
-      <i class="fa-solid fa-trash-can fa-flip"></i>
-      Delete
-    </button>
-    <button class="btn btn-update pe-2" onclick="updateItem(${i})">
-    <i class="fa-solid fa-pen-to-square fa-bounce"></i>
-    Update
-  </button>
-      </td>
-      
-    </tr>
-      `;
+    // URL validation
+    if(isValidsiteURL(urlInput.value) == false || isValidsiteName(nameInput.value) == false) {
+        const modalInstance = new bootstrap.Modal(errorMsgModal);
+        modalInstance.show();
+        return;
     }
-  }
-  tableContent.innerHTML = query;
+
+    // Creating an object for each bookmark row
+    var site = {
+        name: nameInput.value,
+        url: urlInput.value,
+    }
+    sitesList.push(site);
+    fromSitesListToLocalStorage();
+    clearInputsValues();
+    viewSites(sitesList);
+    removeValidationClass();
 }
 
-//Delete Sites From Table
-function deleteItem(i) {
-  debugger;
-  bookmarks.splice(i, 1);
-  localStorage.setItem("bookMarker", JSON.stringify(bookmarks));
-  displaySites();
+function viewSites(list, term) {
+    var allSites = '';
+    for(i = 0; i < list.length; i++) {
+        /* // for cell-name class: The used tag is better as it returns the actual style of the letter if it's upper or lower regardless the toLowerCase() function 
+            <span class="cell-name d-none" id="cell-name-${i}">${term? list[i].name.toLowerCase().replace(term.toLowerCase(), `<span class="text-orange bg-orange">${term}</span>`) : list[i].name}</span>*/
+
+        allSites += `
+            <tr>
+                <td scope="row">${i+1}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="form-group ms-auto">
+                            <span class="cell-name" id="cell-name-${i}">
+                                ${term ? (
+                                    list[i].name.replace(new RegExp(term, "gi"), (match) => {
+                                        const originalCasedMatch = list[i].name.charAt(match.indexOf(match[1]));
+                                        return originalCasedMatch === match ? match : `<span class="text-orange bg-orange">${match}</span>`;
+                                    })
+                                ) : list[i].name}
+                            </span>
+                            <div class="input-group d-none" data-site-index="input-group-${i}">
+                                <input class="form-control" type="text" name="siteNameEdit" id="siteNameEdit-${i}"
+                                    placeholder="Edit Name" minlength="3" data-id="${i+2}">
+                                <div class="input-group-append">
+                                    <button onclick="updateSiteName();" class="btn btn-outline-primary opacity-75 rounded-0 rounded-end" type="button"><i class="fa fa-check"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="editSiteName(${i});" role="button" class="text-black-50 opacity-75 ps-3 ms-auto"><i class="fa-solid fa-edit"></i></div>
+                    </div>
+                </td>
+                <td><a href="${list[i].url}" target="_blank" role="button" class="btn btn-visit"><i class="fa-solid fa-eye pe-md-2"></i><span class="d-none d-sm-inline-block">Visit</span></a></td>
+                <td><button onclick="deleteSite(${i});" class="btn btn-delete"><i class="fa-solid fa-trash-can pe-md-2"></i><span class="d-none d-sm-inline-block">Delete</span></button></td>
+            </tr>
+        `;
+    }
+    allSitesBody.innerHTML = allSites;
+    cell_name = document.querySelectorAll(".cell-name");
+    nameInputGroups = document.querySelectorAll(".input-group.d-none");
+    nameInputsEdit = document.querySelectorAll(".form-control[name = 'siteNameEdit']");
 }
 
-//Visit Sites From Table
-function visitWebsite(websiteIndex) {
-  var httpsRegex = /^https?:\/\//;
-  if (httpsRegex.test(bookmarks[websiteIndex].url)) {
-    open(bookmarks[websiteIndex].url);
-  } else {
-    open(`https://${bookmarks[websiteIndex].url}`);
-  }
+function editSiteName(index) {
+    for(i = 0; i < sitesList.length; i++) {
+        if(i == index) {
+            cell_name[index].classList.add("d-none");
+            nameInputGroups[index].classList.replace("d-none", "d-flex");
+
+            updateIndex = index;
+            nameInputsEdit[index].value = sitesList[index].name;
+        }
+    }
+} 
+
+function updateSiteName() {
+    cell_name[updateIndex].classList.remove("d-none");
+    nameInputGroups[updateIndex].classList.replace("d-flex", "d-none");
+
+    sitesList[updateIndex].name = nameInputsEdit[updateIndex].value;
+    fromSitesListToLocalStorage();
+    viewSites(sitesList);
+    removeValidationClass();
 }
 
-function updateItem(index) {
-  productIndex = index;
-  updateBtn.classList.remove("d-none");
-  submitBtn.classList.add("d-none");
-
-  siteName.value = bookmarks[index].name;
-  siteURL.value = bookmarks[index].url;
+function deleteSite(index) {
+    sitesList.splice(index, 1);
+    fromSitesListToLocalStorage();
+    viewSites(sitesList);
 }
 
-function sendUpdatedData() {
-  bookmarks[productIndex].name = siteName.value;
-  bookmarks[productIndex].url = siteURL.value;
-  localStorage.setItem("bookMarker", JSON.stringify(bookmarks));
+function searchFromSitesList() {
+    var searchList = [];
+    var term = searchInput.value;
 
-  displaySites();
+    for(i = 0; i < sitesList.length; i++) {
+        if(sitesList[i].name.toLowerCase().includes(term.toLowerCase())) {
+            searchList.push(sitesList[i]);
+        }
+    }
 
-  submitBtn.classList.remove("d-none");
-  updateBtn.classList.add("d-none");
-  clearInputs();
+    viewSites(searchList, term);
+}
+
+function fromSitesListToLocalStorage() {
+    localStorage.setItem("sitesList", JSON.stringify(sitesList));
+}
+
+function clearInputsValues() {
+    nameInput.value = '';
+    urlInput.value = '';
+}
+
+function isValidsiteURL(url) {
+    const pattern = new RegExp(
+        '^([a-zA-Z]+:\\/\\/)?' + // protocol
+          '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+          '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR IP (v4) address
+          '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+          '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+          '(\\#[-a-z\\d_]*)?$', // fragment locator
+        'i'
+    );
+    return pattern.test(url);
+}
+
+function isValidsiteName(name) {
+    return name.length >= 3;
+}
+
+function addValidationClass(ele) {
+    if(ele) {
+        ele.classList.add("was-validated");
+    }
+}
+
+function removeValidationClass() {
+    document.querySelectorAll(".form-group.was-validated").forEach(formGroup => {
+        formGroup.classList.remove("was-validated");
+    });
 }
