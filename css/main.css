@@ -34,10 +34,13 @@
 
 ::selection {background: var(--text-bg-select);}
 body {
-    background-color: var(--bg-orange-light);
+    background-image: url(../img/abstract-blue-background-simple-design-for-your-website-free-vector.jpg);
     font-family: var(--font-general);
     color: var(--color-general);
     position: relative;
+    background-position: center;
+    background-size: cover;
+    height: 100vh;
 }
 h1, h2, h3, h4, h5, h6, p {
     margin-bottom: 0;
